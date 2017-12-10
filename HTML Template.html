@@ -1,0 +1,62 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+     
+     <? /* The "<questionmark" tag allows the server-side code to execute
+           functions or insert data while creating HTML from this template */ ?>
+     
+     <? // Inserts external CSS files into the HTML template ?>    
+     <?!= include('BorrowedStyle'); ?>
+     <?!= include('CSS'); ?>
+
+    <!-- The Data Table View panel. Gets hidden during Detail View -->
+    <div id="data-table-panel">  
+       <div class="filter-table">     
+          <div class="float-block">
+             
+             <!-- the NEW ITEM button (links to the form) -->
+             <button id="filter-new" class="btn btn-primary btn-circle" 
+                onclick="window.open('https://tiny.cc/hhspitcrewhelp');return false;">+</button>
+          </div>
+          <div class="float-block">
+             <div id="filter-open-box" class="filter-box" >
+                
+                <!-- SHOWING OPEN filter button -->
+                <button id="filter-open" class="filter btn btn-danger" onclick="toggleFilter('Open', this)">Showing<span>Open</span></button>
+             </div>
+             <div id="filter-waiting-box" class="filter-box" >
+             
+                <!-- SHOWING WAITING filter button -->
+                <button id="filter-waiting" class="filter btn btn-warning" onclick="toggleFilter('Waiting', this)">Showing<span>Waiting</span></button>
+             </div>
+             <div id="filter-done-box" class="filter-box"  >
+             
+                <!-- SHOWING DONE filter button -->
+                <button id="filter-done" class="filter btn btn-success not-active" onclick="toggleFilter('Done', this)">Hiding<span>Done</span></button>
+             </div>
+          </div>
+          <div class="float-block" id="search-block">
+             
+             <!-- SEARCH BOX filter button -->
+             <div>Search visible records: </div>
+             <input id="search" onkeyup="search()"/>
+          </div>
+          <div class="links float-block">
+             
+             <!-- LINK TO SPREADSHEET -->
+             <a href="https://docs.google.com/a/holliston.k12.ma.us/spreadsheets/d/1Vd1dnD05IeanjGKx1XGyPeE04q8IWexDq1vE2dK9o3k/edit?usp=drive_web" target="_blank">
+                View Master Spreadsheet</a>
+          </div>
+       </div>
+    
+       <!-- The DATA TABLE container, to be filled later with javascript code -->
+       <div id="data-table-div">
+          <div id="data-loading">
+             Loading (I hope)....
+          </div>
+       </div>
+    </div>
+
+<!-- Load the javascript files  -->
+<?!= include('Client'); ?>
+<?!= include('Spinner'); ?>
+
+
