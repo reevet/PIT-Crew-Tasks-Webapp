@@ -1,0 +1,378 @@
+<!-- JQUERY Javascript library (for easy element selection with the '$' syntax -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<!-- JQUERYUI Javascript library (for the datepicker pop-up -->
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+
+<!-- BOOTSTRAPLatest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<!-- the Javascript code run locally in the user's browser -->
+<script>
+/* Students: jQuery is a javascript add-on library that makes finding and changing
+ * HTML elements very easy. It is used extensively here. You can recognize it by the
+ * $('some CSS') functions.  */
+    
+ // The code in this function runs when the page is loaded.
+ $(function() {
+    getData();
+ });
+ 
+ /* Global variables that are accessible in every function*/
+ 
+ // Array that holds the values of the current active filters
+ var currentFilter = ["Open", "Waiting"];
+ 
+ // array that holds the rows of data
+ var tableData;
+     
+/**
+ * @summary Gets table data via a server call
+ *
+ * This calls a server-side function and waits for its return values. 
+ */
+function getData() {
+   
+  // puts the filter array into a single string
+  var filters = currentFilter.join(","); 
+  
+  // Calls the getData SERVER function. When successful, it 
+  // passes the returned data to client function showDataTable().
+  google.script.run.withSuccessHandler(processDownload)
+     .getData(filters);
+}
+
+/**
+ * @summary Turns a filter off or on
+ * 
+ * @param string newFilter  the filter to turn on or off
+ * @param button button     the button that was clicked
+ */
+function toggleFilter(newFilter, button) {
+  var index = -1;
+  
+  // cycles through the current filters to see if it is already ON
+  for (i=0; i<currentFilter.length; i++) {
+    if (currentFilter[i] == newFilter) {
+      index = i;
+      break;
+    }
+  }
+  
+  if (index >= 0) {
+    // removes the filter and shrink the button
+    currentFilter.splice(index, 1);
+    $("#"+button.id).addClass("not-active");
+  } else {
+    // adds the filter
+    currentFilter.push(newFilter);
+    $("#"+button.id).removeClass("not-active");
+  }
+  
+ // shows the spinner and hide the button
+    addSpinnerTo(button);
+
+  // refreshes the data
+  getData();
+}
+
+/**
+ * @summary resets the filter buttons and hides the spinners
+ */
+function resetFilterButtons() {
+    // sets buttons to "Showing"
+    $("#filter-open").html("Showing<span>Open</span>");
+    $("#filter-waiting").html("Showing<span>Waiting</span>");
+    $("#filter-done").html("Showing<span>Done</span>");
+    
+    // sets .not-active versions of buttons to "Hiding"
+    $("#filter-open.not-active").html("Hiding<span>Open</span>");
+    $("#filter-waiting.not-active").html("Hiding<span>Waiting</span>");
+    $("#filter-done.not-active").html("Hiding<span>Done</span>");
+}
+      
+/**
+ * @summary Calls a server function to change the status and data of a record 
+ * 
+ * @param string status  The status associated with which button was clicked
+ * (e.g "Done" if done button clicked, etc.).
+ * @param int id  the row id to be changed
+ */      
+function changeStatus(status, id) {
+  // gets the status button for this id
+  var btn = $('#status-button-'+id);
+  
+  // sets the button's text to match the status
+  btn.text(status);
+  
+  // clears all color formatting classes, in prep to add the correct ones
+  btn.removeClass();
+  if (status == "") {
+       btn.text("Open");
+       btn.addClass('btn btn-danger');   // Red
+     } else if (status == "Waiting") {
+       btn.addClass('btn btn-warning')   // Yellow
+     } else if (status == "Done") {
+       btn.addClass('btn btn-success')   // Done
+     } else {
+       btn.addClass('btn btn-warning');  // Yellow if other
+     }
+}
+
+/** 
+ * @summary Preps and row's data and sends it to the server for 
+ *          insertion into the spreadsheet.
+ *
+ * @param int id    the id of the row to update
+ */ 
+function saveData(id) {
+  
+  // loads an array full of the values to send
+  var values = [id,
+               $('#status-button-'+id).text(),
+               $('#stu-'+id).val(),
+               $('#res-'+id).val(),
+               $('#main-row-'+id+' .date input').val(),
+               $('#main-row-'+id+' .room').text(),
+               $('#main-row-'+id+' .issue').text(),
+               $('#main-row-'+id+' .teacher').text()
+               ];
+  
+  // puts the date from its input box back into its span
+  var date = $('#main-row-'+id+' .date input').val();
+  $('#main-row-'+id+' .date').text(date);
+  
+  // Makes the status of the relevant row show "Working" 
+  // until the server returns updated values
+  $('#status-button-'+id).html(spinnerSvg());
+  $('#status-button-'+id).removeClass();
+  $('#status-button-'+id).addClass("btn btn-default working");
+  
+  // hides the detail area of the row
+  $('#response'+id).hide();
+    
+  // Calls the saveData SERVER function. When successful, it 
+  // then calls the client function saveDone() to repopulate the data table.
+  google.script.run.withSuccessHandler(saveDone)
+       .saveData(values);
+}
+
+/** 
+ * @summary Responds to a successful save on the server
+ */
+function saveDone(success) {
+  if (success="true") {
+    // calls for newly updated data from the server 
+    getData();
+  } else {
+  console.log("Error:" + success);
+  }
+}
+
+/**
+ * @summary Resets the table without saving any changes
+ */
+function cancel() {
+  showDataTable(tableData)
+}
+
+/**
+ * @summary Responds to a request for data from the server, saves
+ * the data, and calls for a display of the data in the table.
+ * This is called after the server call for main-table data.
+ *
+ * @param dataJson  the data loaded from the server, in JSON format
+ */
+function processDownload(dataJson) {
+  // parses and saves the data
+  tableData = JSON.parse(dataJson);
+  
+  // creates the data table full of data
+  showDataTable();
+  }
+      
+/**
+ * @summary Creates the HTML table for the main view. 
+ * The HTML is then inserted into the appropriate
+ * element on the page.
+ */   
+ 
+ function showDataTable() {
+ 
+  resetFilterButtons();
+  
+  
+   var data = tableData;
+   if (data.length == 0) {
+      $("#data-table-div").empty();
+      $("#data-table-div").append("<div id='data-loading'>No results to show</div>");
+      return;
+   }    
+   
+   var html = "";
+   html+= "<table class='data-table table'>";
+   
+   
+   for (var i = 0; i < data.length; i++) {
+     
+     var row = data[i];
+     var id = row[0];
+     var status = row[1];
+     var room = row[3];
+     var student = row[7];
+     var comments = row[9];
+     console.log("student="+student);
+     console.log("comments="+comments);
+     var toggle = "showDetails("+id+")";
+     html+= '<tr id="main-row-'+id+'" class="main-row" onClick="'+toggle+'" >';
+     html+= '<td class="col-status"><h3><span id="status-button-'+id+'" '
+     
+     
+     
+     if ((status == "") || (status == "Open")) {
+       html+= "class='label label-danger'>Open";         
+     } else if (status == "Waiting") {
+       html+= "class='label label-warning'>Waiting";     
+     } else if (status == "Done") {
+       html+= "class='label label-success'>Done";        
+     } else {
+       html+= "class='label label-warning'>"+status;     
+     }
+        
+     html+= '</span></h3></td>';
+     html+= "<td class='col-date'><span class='date'>" + row[2] + "</span></td>";
+     html+= "<td class='col-issue'>";
+     html+= "<span class='room-wrap'>";
+     if (room !="") {
+       if (room >999) {
+         html += "CB #";
+       } else if (room >0) {
+         html += "Rm "
+       }
+       html += "<span class='room'>"+ room + "</span>";
+     }
+     html += "</span> ";
+     html += "<span class='issue'>"+row[4] + "</span> (<span class='teacher'>"+ row[5]+ "</span>)</td></tr>";
+     
+     html += "<tr id='response-"+id+"' class='response'><td class='col-status' colspan=2>";
+     html += '<button class="btn btn-circle btn-primary save" onclick="saveData('+id+');" >&#128190;<br>Save</button>';
+     html += "<a class='cancel' onclick='cancel();' >Cancel</a>";
+     html+= "</td><td colspan=2>";
+     html += "<div class='col-sm-2'>";
+     html += "<input class='form-control student' id='stu-"+id+"' placeholder='Your initials' value='"+student+"'/>";
+     html += "</div>";   
+     html += "<div class='col-sm-9'>";
+     html += "<input class='form-control resolution' id='res-"+id+"' placeholder='How did you fix it?' value='"+comments+"'/>";
+     html += "</div>";
+     html += '<div class="col-sm-6 status-change-buttons">';
+     html += '<label>Change to:</label> ';
+     html += "<button id='done' class='btn btn-success' onclick='changeStatus("+'"Done"'+", "+id+")'>Done</button> ";
+     html += "<button id='waiting' class='btn btn-warning' onclick='changeStatus("+'"Waiting"'+", "+id+")'>Waiting</button> ";
+     html += "<button id='clear' class='btn btn-danger' onclick='changeStatus("+'""'+", "+id+")'>Open</button>";
+     html += "</div>";   
+    
+     html += "</div>";
+     html += '</td></tr>';
+   }
+   html+= '</table>';
+   
+   
+   var div = $('#data-table-div');
+   div.empty();
+  
+   
+   div.append(html);
+   
+   $(".response").hide();
+   
+  if (currentFilter == "OpenWaiting") {
+    $(".search-filter-text").text("Open & Waiting");
+  } else if (currentFilter == null) {
+    $(".search-filter-text").text("ALL");
+  } else {
+    $(".search-filter-text").text(currentFilter);
+  }  
+
+}
+
+/**
+ * @summary Searches the visible rows for specific text. Works in real-time
+ * as the user types in the search box.
+ */
+function search() {
+  // converts the search request to lowercase (for comparisons,
+  // all strings will the lowercase-ized. Is that a word?)
+  var searchVal = (""+$("#search").val()).toLowerCase();
+
+  // cycles through all rows...
+  for (i=0; i<tableData.length; i++) {
+    var row = tableData[i];
+    var id = row[0];
+    var room = (""+row[3]).toLowerCase();  //(""+  ) is to force-convert to a string
+    var issue = (""+row[4]).toLowerCase();
+    var name = (""+row[5]).toLowerCase();
+    var resolution = (""+row[9]).toLowerCase();
+    
+    // if the string exists in room/chromebook number, issue, name, or resolutions...
+    if ((room.indexOf(searchVal)>=0)
+    || (issue.indexOf(searchVal)>=0)
+    || (name.indexOf(searchVal)>=0)
+    || (resolution.indexOf(searchVal)>=0)) {
+      
+      // shows the main row
+      $("#main-row-"+id).show(); 
+    } else {
+    
+      // hides the main row and response row
+      $("#main-row-"+id).hide();
+      $("#response-"+id).hide();
+    }
+  }
+}
+
+/** 
+ * @summary Shows the response row section of a record
+ *
+ * @param int id  the id of the row to show
+ */
+function showDetails(id) {
+   // only works if the response is previously hidden
+   if ($("#response-"+id).is(":hidden")) {
+   
+     // shows the response row
+     $("#response-"+id).show(0);
+     
+     // sets the main-row data to be editable
+     var contenteditable = "true";
+     contenteditable = "true";   
+     $("#main-row-"+id+" td span").attr("contenteditable", contenteditable);
+     $("#main-row-"+id+" td span").addClass("contenteditable");
+   
+     // adds the date value to a new date input box
+     var date = $("#main-row-"+id+" td span.date").text();
+     $("#main-row-"+id+" td span.date").html("<input type='text' id='date-"+id+"' />");
+     
+     // adds a datepicker pop-up box to the date box (using the jQueryUI library
+     $("#main-row-"+id+" td span.date #date-"+id).datepicker({ dateFormat: 'mm/dd/yy' });
+     $("#main-row-"+id+" td span.date #date-"+id).datepicker("setDate",date);
+  } 
+}
+
+/**
+ * @summary Adds a loading animation to a filter button or status button
+ *
+ * @param button button  the button to receive the animation
+ */
+function addSpinnerTo(button) {
+  
+  // change the button's inner html to the animation svg
+  $("#"+button.id).html(spinnerSvg());
+}
+
+
+
+</script>
+
+
