@@ -1,0 +1,62 @@
+<style>
+/**
+ * Original CSS for proper layout and minor styling of HTML elements.
+ * This stylesheet should be loaded AFTER the BorrowedStyle in order to
+ * allow for custom overriding.
+ */
+
+body {
+  font-family: Roboto, Open Sans, Arial, Helvetica, sans-serif;
+  font-size: 12pt;
+}
+
+h3 {margin:0 !important;}
+
+table {width:100%; }
+
+/* Header and butto styling */
+.filter-table {padding-bottom: 30px;}
+.filter-table, .status-buttons, .nav-buttons { margin: 5px auto; text-align: center;}
+.filter-table button, .status-buttons button, .nav-buttons button {margin: 5px;}
+.filter-table .float-block {display: inline-block;}
+.filter-table button {text-transform: capitalize !important; height: 55px; }
+.filter-table button.filter {min-width:90px;}
+.filter-table button span {display: block; text-transform: uppercase }
+.filter-table button#filter-new {font-size: 250%;}
+.filter-box {display: inline-block; min-width: 95px;}
+.nav-buttons button.prev {display: block; float: left; }
+.nav-buttons button.next {display: block; float: right;}
+.status-buttons {margin-top: 15px;}
+.not-active {transform: scale(0.7);}
+#search-block div {font-size: 90%; font-style: italic; text-align: left; margin-top: 5px}
+.filter-table .links.float-block {display: block; clear: both;}
+
+/* Main data table */
+.data-table {border-collapse: collapse; padding: 0 5px}
+.data-table tr.main-row {border-top: solid 1px #ccc; }
+.data-table tr.main-row td {padding: 15px 0px;}
+.data-table tr.response {border-bottom: solid 1px #ccc;}
+.data-table tr.main-row td span.contenteditable {display: inline-block;min-width: 50px;}
+.data-table tr:nth-child(4n+3),
+.data-table tr:nth-child(4n+4) {background-color: #f0f0f0;}
+table.data-table tr td {vertical-align:middle; padding: 3px 5px;position: relative;}
+.data-table tr td.col-status {text-align: center; width: 90px;}
+.data-table tr td.col-date {width: 90px; text-align:center; white-space: nowrap; font-size: 75%; font-style: italic;}
+.data-table tr td.col-date span input {width: 100%; border:0; text-align:center;}
+.data-table tr td.col-issue span.room-wrap {font-weight: bold; font-size: 8-%;}
+.data-table .status-change-buttons {margin-top: 40px;}
+.data-table .status-change-buttons {margin-top: 40px;}
+.data-table tr.response td {padding: 5px 5px 30px 5px; }
+a.cancel { display: block;  margin-top: 15px;  font-size: 90%;  }
+
+.search-hint {  font-style: italic;  font-size: 75%;  }
+
+/* Main data table container */
+#data-table-div {width: 100%;}
+#data-table-div #data-loading { text-align: center; display:block; width: 100%; font-size: 150%;}
+
+/* Override borrowed CSS */
+.form-control {border-bottom: 1px solid #ccc;}
+.input-sm, .form-horizontal .form-group-sm .form-control {padding: 0}
+
+</style>
